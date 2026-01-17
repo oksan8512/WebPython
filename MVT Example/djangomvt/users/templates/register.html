@@ -4,126 +4,344 @@
 
 {% block mycontent %}
 <div class="row justify-content-center">
-  <div class="col-md-8 col-lg-6">
-    <div class="card shadow">
-      <div class="card-header bg-primary text-white">
-        <h3 class="mb-0 text-center">Реєстрація нового користувача</h3>
-      </div>
-      <div class="card-body">
-        <form method="POST" enctype="multipart/form-data">
-          {% csrf_token %}
-          
-          {% if form.errors %}
-          <div class="alert alert-danger">
-            <h5>Виправте наступні помилки:</h5>
-            <ul class="mb-0">
-              {% for field in form %}
-                {% for error in field.errors %}
-                  <li>{{ field.label }}: {{ error }}</li>
-                {% endfor %}
-              {% endfor %}
-              {% for error in form.non_field_errors %}
-                <li>{{ error }}</li>
-              {% endfor %}
-            </ul>
-          </div>
-          {% endif %}
-          
-          <div class="mb-3">
-            <label for="{{ form.username.id_for_label }}" class="form-label">
-              {{ form.username.label }} <span class="text-danger">*</span>
-            </label>
-            {{ form.username }}
-            {% if form.username.errors %}
-              <div class="text-danger small mt-1">{{ form.username.errors }}</div>
-            {% endif %}
-            <div class="form-text">Введіть унікальний логін для входу в систему</div>
-          </div>
-          
-          <div class="mb-3">
-            <label for="{{ form.email.id_for_label }}" class="form-label">
-              {{ form.email.label }} <span class="text-danger">*</span>
-            </label>
-            {{ form.email }}
-            {% if form.email.errors %}
-              <div class="text-danger small mt-1">{{ form.email.errors }}</div>
-            {% endif %}
-          </div>
-          
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label for="{{ form.first_name.id_for_label }}" class="form-label">
-                {{ form.first_name.label }} <span class="text-danger">*</span>
-              </label>
-              {{ form.first_name }}
-              {% if form.first_name.errors %}
-                <div class="text-danger small mt-1">{{ form.first_name.errors }}</div>
-              {% endif %}
+    <div class="col-md-8 col-lg-6">
+        <div class="text-center mb-5">
+            <h1 class="display-4 fw-bold mb-2">Реєстрація</h1>
+            <p class="text-muted">Створіть свій обліковий запис</p>
+        </div>
+        
+        <form method="POST" enctype="multipart/form-data" id="registrationForm">
+            {% csrf_token %}
+            
+            <!-- Фото профілю -->
+            <div class="mb-4 text-center">
+                <label class="form-label-dark d-block mb-3">Фото профілю</label>
+                
+                <div class="profile-image-wrapper mb-3">
+                    <img src="https://via.placeholder.com/150" 
+                         alt="Preview" 
+                         id="profilePreview" 
+                         class="profile-preview">
+                    <div class="upload-overlay">
+                        <i class="bi bi-camera-fill"></i>
+                    </div>
+                </div>
+                
+                <input type="file" 
+                       class="form-control d-none" 
+                       id="id_image"
+                       name="image"
+                       accept="image/*">
+                
+                <button type="button" class="btn btn-outline-secondary" id="selectImageBtn">
+                    <i class="bi bi-upload"></i> Вибрати фото
+                </button>
+                
+                <!-- Прихований input для обрізаного зображення -->
+                <input type="hidden" id="croppedImage" name="cropped_image">
             </div>
             
-            <div class="col-md-6 mb-3">
-              <label for="{{ form.last_name.id_for_label }}" class="form-label">
-                {{ form.last_name.label }} <span class="text-danger">*</span>
-              </label>
-              {{ form.last_name }}
-              {% if form.last_name.errors %}
-                <div class="text-danger small mt-1">{{ form.last_name.errors }}</div>
-              {% endif %}
+            <div class="row">
+                <!-- Ім'я -->
+                <div class="col-md-6 mb-4">
+                    <label for="id_first_name" class="form-label-dark">Ім'я</label>
+                    {{ form.first_name }}
+                </div>
+                
+                <!-- Прізвище -->
+                <div class="col-md-6 mb-4">
+                    <label for="id_last_name" class="form-label-dark">Прізвище</label>
+                    {{ form.last_name }}
+                </div>
             </div>
-          </div>
-          
-          <div class="mb-3">
-            <label for="{{ form.image.id_for_label }}" class="form-label">
-              {{ form.image.label }} <span class="text-danger">*</span>
-            </label>
-            {{ form.image }}
-            {% if form.image.errors %}
-              <div class="text-danger small mt-1">{{ form.image.errors }}</div>
-            {% endif %}
-            <div class="form-text">Завантажте своє фото (JPG, PNG або WEBP)</div>
-          </div>
-          
-          <div class="mb-3">
-            <label for="{{ form.password1.id_for_label }}" class="form-label">
-              {{ form.password1.label }} <span class="text-danger">*</span>
-            </label>
-            {{ form.password1 }}
-            {% if form.password1.errors %}
-              <div class="text-danger small mt-1">{{ form.password1.errors }}</div>
-            {% endif %}
-            <div class="form-text">
-              <small>
-                <ul class="mb-0">
-                  <li>Мінімум 8 символів</li>
-                  <li>Не може бути схожим на інші дані</li>
-                  <li>Не може містити лише цифри</li>
-                </ul>
-              </small>
+            
+            <!-- Username -->
+            <div class="mb-4">
+                <label for="id_username" class="form-label-dark">Ім'я користувача</label>
+                {{ form.username }}
             </div>
-          </div>
-          
-          <div class="mb-3">
-            <label for="{{ form.password2.id_for_label }}" class="form-label">
-              {{ form.password2.label }} <span class="text-danger">*</span>
-            </label>
-            {{ form.password2 }}
-            {% if form.password2.errors %}
-              <div class="text-danger small mt-1">{{ form.password2.errors }}</div>
-            {% endif %}
-          </div>
-          
-          <div class="d-grid gap-2">
-            <button type="submit" class="btn btn-primary btn-lg">
-              <i class="bi bi-person-plus"></i> Зареєструватися
-            </button>
-          </div>
-          
-          <div class="text-center mt-3">
-            <p class="text-muted">Вже маєте акаунт? <a href="{% url 'users:login' %}">Увійти</a></p>
-          </div>
+            
+            <!-- Email -->
+            <div class="mb-4">
+                <label for="id_email" class="form-label-dark">Email</label>
+                {{ form.email }}
+            </div>
+            
+            <!-- Пароль -->
+            <div class="mb-4">
+                <label for="id_password1" class="form-label-dark">Пароль</label>
+                {{ form.password1 }}
+            </div>
+            
+            <!-- Підтвердження пароля -->
+            <div class="mb-4">
+                <label for="id_password2" class="form-label-dark">Підтвердіть пароль</label>
+                {{ form.password2 }}
+            </div>
+            
+            <!-- Submit Button -->
+            <div class="d-grid mb-4">
+                <button type="submit" class="btn btn-green btn-lg">
+                    <i class="bi bi-person-plus"></i> Зареєструватися
+                </button>
+            </div>
+            
+            <!-- Login Link -->
+            <div class="text-center">
+                <p class="text-muted mb-0">
+                    Вже маєте акаунт? 
+                    <a href="{% url 'users:login' %}" class="text-decoration-none">Увійти</a>
+                </p>
+            </div>
         </form>
-      </div>
     </div>
-  </div>
 </div>
+
+<!-- Модальне вікно для обрізки зображення -->
+<div class="modal fade" id="cropperModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-crop"></i> Обрізати зображення
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="img-container">
+                    <img id="cropperImage" src="" alt="Image for cropping">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Скасувати
+                </button>
+                <button type="button" class="btn btn-green" id="cropButton">
+                    <i class="bi bi-check-circle"></i> Застосувати
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-label-dark {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-control, select, textarea {
+        background-color: transparent;
+        border: none;
+        border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+        border-radius: 0;
+        color: #212529;
+        padding: 0.75rem 0;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+    
+    .form-control:focus, select:focus, textarea:focus {
+        background-color: transparent;
+        border-bottom-color: #28a745;
+        box-shadow: none;
+        color: #212529;
+        outline: none;
+    }
+    
+    .form-control::placeholder {
+        color: #adb5bd;
+    }
+    
+    .btn-green {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-green:hover {
+        background-color: #218838;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    }
+    
+    a {
+        color: #28a745;
+    }
+    
+    a:hover {
+        color: #218838;
+    }
+    
+    /* Стилі для превью фото */
+    .profile-image-wrapper {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        margin: 0 auto;
+        cursor: pointer;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 3px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+    
+    .profile-image-wrapper:hover {
+        border-color: #28a745;
+        transform: scale(1.05);
+    }
+    
+    .profile-preview {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .upload-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .profile-image-wrapper:hover .upload-overlay {
+        opacity: 1;
+    }
+    
+    .upload-overlay i {
+        font-size: 2rem;
+        color: white;
+    }
+    
+    /* Стилі для Cropper */
+    .img-container {
+        max-height: 500px;
+        width: 100%;
+    }
+    
+    .img-container img {
+        max-width: 100%;
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block myScripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const imageInput = document.getElementById('id_image');
+    const selectImageBtn = document.getElementById('selectImageBtn');
+    const profilePreview = document.getElementById('profilePreview');
+    const cropperModal = new bootstrap.Modal(document.getElementById('cropperModal'));
+    const cropperImage = document.getElementById('cropperImage');
+    const cropButton = document.getElementById('cropButton');
+    const croppedImageInput = document.getElementById('croppedImage');
+    const profileImageWrapper = document.querySelector('.profile-image-wrapper');
+    
+    let cropper;
+    let originalFile;
+    
+    // Відкриваємо вибір файлу при кліку на кнопку або на фото
+    selectImageBtn.addEventListener('click', function() {
+        imageInput.click();
+    });
+    
+    profileImageWrapper.addEventListener('click', function() {
+        imageInput.click();
+    });
+    
+    // Обробка вибору зображення
+    imageInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        
+        if (file && file.type.startsWith('image/')) {
+            originalFile = file;
+            const reader = new FileReader();
+            
+            reader.onload = function(event) {
+                cropperImage.src = event.target.result;
+                cropperModal.show();
+                
+                // Ініціалізуємо Cropper після показу модального вікна
+                document.getElementById('cropperModal').addEventListener('shown.bs.modal', function() {
+                    if (cropper) {
+                        cropper.destroy();
+                    }
+                    
+                    cropper = new Cropper(cropperImage, {
+                        aspectRatio: 1,
+                        viewMode: 1,
+                        dragMode: 'move',
+                        autoCropArea: 0.8,
+                        restore: false,
+                        guides: true,
+                        center: true,
+                        highlight: false,
+                        cropBoxMovable: true,
+                        cropBoxResizable: true,
+                        toggleDragModeOnDblclick: false,
+                    });
+                }, { once: true });
+            };
+            
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    // Обробка кнопки "Застосувати"
+    cropButton.addEventListener('click', function() {
+        if (cropper) {
+            // Отримуємо обрізане зображення як canvas
+            const canvas = cropper.getCroppedCanvas({
+                width: 800,
+                height: 800,
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high',
+            });
+            
+            // Конвертуємо canvas в blob
+            canvas.toBlob(function(blob) {
+                // Створюємо URL для превью
+                const url = URL.createObjectURL(blob);
+                profilePreview.src = url;
+                
+                // Конвертуємо blob в base64 для відправки на сервер
+                const reader = new FileReader();
+                reader.onloadend = function() {
+                    croppedImageInput.value = reader.result;
+                };
+                reader.readAsDataURL(blob);
+                
+                // Закриваємо модальне вікно
+                cropperModal.hide();
+                
+                // Знищуємо cropper
+                cropper.destroy();
+            }, 'image/jpeg', 0.95);
+        }
+    });
+    
+    // Очищуємо cropper при закритті модального вікна
+    document.getElementById('cropperModal').addEventListener('hidden.bs.modal', function() {
+        if (cropper) {
+            cropper.destroy();
+            cropper = null;
+        }
+    });
+});
+</script>
 {% endblock %}

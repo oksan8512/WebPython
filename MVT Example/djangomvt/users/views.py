@@ -3,6 +3,9 @@ from .forms import CustomUserCreationForm
 from .utils import compress_image
 from django.contrib import messages
 from django.contrib.auth import login, authenticate, logout, get_user_model
+from django.core.files.base import ContentFile
+import base64
+import uuid
 
 # Отримуємо кастомну модель користувача
 User = get_user_model()
@@ -25,23 +28,32 @@ def register(request):
                 user.first_name = form.cleaned_data['first_name']
                 user.last_name = form.cleaned_data['last_name']
                 
-                # Обробка зображення
-                if 'image' in request.FILES:
+                # Обробка обрізаного зображення з CropperJS
+                cropped_image_data = request.POST.get('cropped_image')
+                
+                if cropped_image_data:
+                    # Декодуємо base64 зображення
+                    format, imgstr = cropped_image_data.split(';base64,')
+                    ext = format.split('/')[-1]
+                    
+                    # Створюємо ContentFile з декодованих даних
+                    image_data = ContentFile(base64.b64decode(imgstr), name=f'{uuid.uuid4()}.{ext}')
+                    
                     # Створюємо 3 версії зображення (маленьке, середнє, велике)
                     optimized_image_small, image_name_small = compress_image(
-                        request.FILES['image'], 
+                        image_data, 
                         size=(300, 300)
                     )
                     user.image_small.save(image_name_small, optimized_image_small, save=False)
                     
                     optimized_image_medium, image_name_medium = compress_image(
-                        request.FILES['image'], 
+                        image_data, 
                         size=(800, 800)
                     )
                     user.image_medium.save(image_name_medium, optimized_image_medium, save=False)
                     
                     optimized_image_large, image_name_large = compress_image(
-                        request.FILES['image'], 
+                        image_data, 
                         size=(1200, 1200)
                     )
                     user.image_large.save(image_name_large, optimized_image_large, save=False)
