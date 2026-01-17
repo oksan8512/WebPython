@@ -70,4 +70,8 @@ py manage.py startapp products
 py manage.py makemigrations products
 py manage.py migrate
 ```
+
+
+
+
  

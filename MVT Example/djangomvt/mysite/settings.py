@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-yzij6cw*zg7c62)hs=llpbf0n+r@wgxu*6(5se$b&rv+p0fo%-'
+SECRET_KEY = 'django-insecure-r5z2mgrmi1adr_20f$frvkr92$1g5lk3u#w0u%if1-fdxrvs#b'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -31,6 +31,8 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'categories',
+    'users',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -74,11 +76,17 @@ WSGI_APPLICATION = 'mysite.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'HOST': 'ep-soft-leaf-aguhrk0i-pooler.c-2.eu-central-1.aws.neon.tech',
+        'NAME': 'neondb',
+        'USER': 'neondb_owner',
+        'PASSWORD': 'npg_fQ2ygBdT3OFb',
+        'PORT': '5432'
     }
+
 }
 
 
@@ -117,6 +125,16 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+
+STATICFILES_DIRS = [
+    str(BASE_DIR / 'static'),
+]
+
+IMAGE_URL = '/images/'
+
+IMAGES_ROOT = BASE_DIR / 'images'
+
+AUTH_USER_MODEL = 'users.CustomUser'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
