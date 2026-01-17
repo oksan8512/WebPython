@@ -40,13 +40,22 @@
                             <a class="nav-link disabled" aria-disabled="true">Disabled</a> 
                         </li> 
                     </ul> 
-                    <div class="d-flex gap-2">
-                        <a href="{% url 'users:login' %}" class="btn btn-outline-success">
-                            Увійти
-                        </a>
-                        <a href="{% url 'users:register' %}" class="btn btn-outline-light">
-                            Зареєструватися
-                        </a>
+                    <div class="d-flex gap-2 align-items-center">
+                        {% if user.is_authenticated %}
+                            <span class="navbar-text text-light me-2">
+                                <i class="bi bi-person-circle"></i> {{ user.first_name|default:user.username }}
+                            </span>
+                            <a href="{% url 'users:logout' %}" class="btn btn-outline-danger">
+                                <i class="bi bi-box-arrow-right"></i> Вийти
+                            </a>
+                        {% else %}
+                            <a href="{% url 'users:login' %}" class="btn btn-outline-success">
+                                Увійти
+                            </a>
+                            <a href="{% url 'users:register' %}" class="btn btn-outline-light">
+                                Зареєструватися
+                            </a>
+                        {% endif %}
                     </div>
                 </div> 
             </div> 
@@ -81,7 +90,9 @@
                     <ul class="list-unstyled">
                         <li><a href="/" class="text-muted text-decoration-none"><i class="bi bi-house"></i> Головна</a></li>
                         <li><a href="/categories" class="text-muted text-decoration-none"><i class="bi bi-grid"></i> Категорії</a></li>
+                        {% if not user.is_authenticated %}
                         <li><a href="{% url 'users:register' %}" class="text-muted text-decoration-none"><i class="bi bi-person-plus"></i> Реєстрація</a></li>
+                        {% endif %}
                     </ul>
                 </div>
                 <div class="col-md-4 mb-3">
