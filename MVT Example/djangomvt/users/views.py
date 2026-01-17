@@ -3,7 +3,6 @@ from .forms import CustomUserCreationForm
 from .utils import compress_image
 from django.contrib import messages
 
-# Create your views here.
 def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST, request.FILES)
@@ -21,11 +20,25 @@ def register(request):
                     optimized_image, image_name = compress_image(request.FILES['image'], size=(1200,1200))
                     user.image_large.save(image_name, optimized_image, save=False)
                 user.save()
+                messages.success(request, 'Ви успішно зареєструвалися!')
                 return redirect('categories:show_categories')
             except Exception as e:
                 messages.error(request, f'Помилка при реєстрації: {str(e)}')
         else:
-            messages.success(request, 'Виправте помилки в формі')
+            messages.error(request, 'Виправте помилки в формі')
     else:
         form = CustomUserCreationForm()
     return render(request, 'register.html', {'form': form})
+
+
+def login_view(request):
+    """
+    View для відображення сторінки входу
+    (поки що тільки стилізація, без логіки автентифікації)
+    """
+    if request.method == 'POST':
+        # Тут буде логіка входу пізніше
+        messages.info(request, 'Функція входу ще не реалізована')
+        return redirect('users:login')
+    
+    return render(request, 'login.html')
