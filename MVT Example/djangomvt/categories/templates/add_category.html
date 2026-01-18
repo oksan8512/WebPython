@@ -13,28 +13,13 @@
         </div>
 
         <div class="mb-3">
-            <label for="slug" class="form-label">Slug (URL)</label>
-            <input type="text" class="form-control" id="slug" name="slug" required>
-            <small class="text-muted">Наприклад: electronics, clothing, books</small>
-        </div>
-
-        <div class="mb-3">
             <label for="image" class="form-label">Головне зображення</label>
             <input type="file" class="form-control" id="image" name="image" accept="image/*">
-            <small class="text-muted">Завантажте головне зображення категорії</small>
         </div>
 
         <div class="mb-3">
             <label for="description">Опис:</label>
-            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
-            <small class="text-muted">Тут можна додавати зображення через TinyMCE</small>
-        </div>
-
-        <div class="mb-3 form-check">
-            <input type="checkbox" class="form-check-input" id="is_active" name="is_active" checked>
-            <label class="form-check-label" for="is_active">
-                Активна категорія
-            </label>
+            <textarea class="form-control" id="description" name="description" rows="10"></textarea>
         </div>
 
         <button type="submit" class="btn btn-primary">Додати</button>
@@ -46,15 +31,6 @@
 
 {% block myScripts %}
 <script>
-    // Автоматична генерація slug з назви
-    document.getElementById('name').addEventListener('input', function(e) {
-        const slug = e.target.value
-            .toLowerCase()
-            .replace(/[^a-z0-9а-яії]+/g, '-')
-            .replace(/^-+|-+$/g, '');
-        document.getElementById('slug').value = slug;
-    });
-
     tinymce.init({
         selector: 'textarea',
         plugins: 'anchor autolink charmap codesample emoticons ' +
@@ -63,65 +39,32 @@
             'underline strikethrough | link image media table | align '+
             'lineheight | numlist bullist indent outdent | emoticons charmap '+
             '| removeformat',
-        
-        // Налаштування завантаження зображень
-        images_upload_url: '{% url "categories:upload_image" %}',
         automatic_uploads: true,
-        images_file_types: 'jpg,jpeg,png,webp',
+        images_file_types: "jpg,jpeg,png,webp",
         paste_data_images: true,
-        
-        // Обробник завантаження
-        images_upload_handler: async (blobInfo, progress) => {
-            const formData = new FormData();
-            formData.append('file', blobInfo.blob(), blobInfo.filename());
-            
-            try {
-                const response = await fetch('{% url "categories:upload_image" %}', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const result = await response.json();
-                
-                if (result.error) {
-                    throw new Error(result.error);
-                }
-                
-                return result.location;
-            } catch (error) {
-                console.error('Помилка завантаження:', error);
-                throw error;
-            }
-        },
+        images_upload_url: '{% url "categories:upload_image" %}',
         
         setup: (editor) => {
             editor.on('Paste', async (e) => {
                 e.preventDefault();
-                
                 const clipboardData = e.clipboardData || e.originalEvent?.clipboardData;
                 if (!clipboardData) return;
 
                 const html = clipboardData.getData("text/html");
                 const text = clipboardData.getData("text/plain");
-
                 let contentToInsert = html || text;
                 if (!contentToInsert) return;
 
                 const temp = document.createElement("div");
                 temp.innerHTML = contentToInsert;
-
                 const imgs = Array.from(temp.querySelectorAll("img"));
 
                 for (let img of imgs) {
                     const src = img.getAttribute("src");
                     if (!src || src.startsWith("http://127.0.0.1")) continue;
-                    
                     try {
-                        console.log("Upload url", src);
-                        // Завантаження зовнішнього зображення
                         const response = await fetch(src);
                         const blob = await response.blob();
-                        
                         const formData = new FormData();
                         formData.append('file', blob, 'pasted-image.jpg');
                         
@@ -135,10 +78,8 @@
                         img.removeAttribute("srcset");
                     } catch (err) {
                         console.error("Failed to upload image:", err);
-                        img.setAttribute("src", "/images/default.jpg");
                     }
                 }
-                
                 editor.insertContent(temp.innerHTML);
             });
         }
