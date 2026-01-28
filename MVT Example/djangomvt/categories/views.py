@@ -1,78 +1,141 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
+from .models import Category
 from django.utils.text import slugify
-import os
-
-from .models import Category, CategoryImage
-
+import requests
+from django.core.files.base import ContentFile
+import uuid
 
 def show_categories(request):
-    categories = Category.objects.all()
-    return render(request, "categories.html", {'categories': categories})
-
+    categories = Category.objects.filter(is_active=True).order_by('-created_at')
+    return render(request, 'categories.html', {'categories': categories})
 
 def add_category(request):
     if request.method == 'POST':
         name = request.POST.get('name')
-        description = request.POST.get('description', '')
-        image = request.FILES.get('image')
+        description = request.POST.get('description')
+        image_url = request.POST.get('image_url')
+        image_file = request.FILES.get('image_file')
         
-        # Автоматична генерація slug
-        base_slug = slugify(name, allow_unicode=False)
-        slug = base_slug
-        
-        # Перевірка унікальності slug
-        counter = 1
-        while Category.objects.filter(slug=slug).exists():
-            slug = f"{base_slug}-{counter}"
-            counter += 1
+        if not name:
+            messages.error(request, 'Назва категорії обов\'язкова!')
+            return render(request, 'add_category.html')
         
         try:
-            # Створення категорії (is_active=True за замовчуванням)
-            category = Category.objects.create(
+            slug = slugify(name)
+            
+            category = Category(
                 name=name,
                 slug=slug,
-                description=description,
-                image=image
+                description=description
             )
             
-            messages.success(request, f'Категорія "{name}" успішно додана!')
+            # Спосіб 1: Завантаження файлу
+            if image_file:
+                category.image = image_file
+            
+            # Спосіб 2: URL зображення
+            elif image_url:
+                try:
+                    response = requests.get(image_url, timeout=10)
+                    response.raise_for_status()
+                    
+                    file_name = image_url.split('/')[-1].split('?')[0]
+                    if '.' not in file_name:
+                        file_name = f'{uuid.uuid4()}.jpg'
+                    
+                    category.image.save(
+                        file_name,
+                        ContentFile(response.content),
+                        save=False
+                    )
+                except requests.exceptions.RequestException as e:
+                    messages.warning(request, f'Не вдалося завантажити зображення з URL: {str(e)}')
+            
+            category.save()
+            messages.success(request, 'Категорію успішно додано!')
             return redirect('categories:show_categories')
+            
         except Exception as e:
             messages.error(request, f'Помилка при створенні категорії: {str(e)}')
-            return render(request, 'add_category.html')
     
     return render(request, 'add_category.html')
 
 
-@csrf_exempt
-@require_http_methods(["POST"])
-def upload_image(request):
-    """Завантаження зображення з TinyMCE"""
-    if 'file' not in request.FILES:
-        return JsonResponse({'error': 'Файл не знайдено'}, status=400)
+def edit_category(request, pk):
+    category = get_object_or_404(Category, pk=pk)
     
-    file = request.FILES['file']
-    
-    # Перевірка типу файлу
-    allowed_extensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif']
-    ext = os.path.splitext(file.name)[1].lower()
-    if ext not in allowed_extensions:
-        return JsonResponse({'error': 'Недозволений тип файлу'}, status=400)
-    
-    try:
-        # Створення запису в базі
-        category_image = CategoryImage.objects.create(
-            image=file,
-            original_filename=file.name
-        )
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        description = request.POST.get('description')
+        image_url = request.POST.get('image_url')
+        image_file = request.FILES.get('image_file')
+        remove_image = request.POST.get('remove_image')
         
-        return JsonResponse({
-            'location': category_image.image.url,
-            'image_id': category_image.id
-        })
-    except Exception as e:
-        return JsonResponse({'error': f'Помилка завантаження: {str(e)}'}, status=500)
+        if not name:
+            messages.error(request, 'Назва категорії обов\'язкова!')
+            return render(request, 'edit_category.html', {'category': category})
+        
+        try:
+            category.name = name
+            category.slug = slugify(name)
+            category.description = description
+            
+            # Видалення зображення
+            if remove_image:
+                if category.image:
+                    category.image.delete()
+                    category.image = None
+            
+            # Завантаження нового файлу
+            if image_file:
+                if category.image:
+                    category.image.delete()
+                category.image = image_file
+            
+            # URL зображення
+            elif image_url and not remove_image:
+                try:
+                    response = requests.get(image_url, timeout=10)
+                    response.raise_for_status()
+                    
+                    if category.image:
+                        category.image.delete()
+                    
+                    file_name = image_url.split('/')[-1].split('?')[0]
+                    if '.' not in file_name:
+                        file_name = f'{uuid.uuid4()}.jpg'
+                    
+                    category.image.save(
+                        file_name,
+                        ContentFile(response.content),
+                        save=False
+                    )
+                except requests.exceptions.RequestException as e:
+                    messages.warning(request, f'Не вдалося завантажити зображення з URL: {str(e)}')
+            
+            category.save()
+            messages.success(request, 'Категорію успішно оновлено!')
+            return redirect('categories:show_categories')
+            
+        except Exception as e:
+            messages.error(request, f'Помилка при оновленні категорії: {str(e)}')
+    
+    return render(request, 'edit_category.html', {'category': category})
+
+
+def delete_category(request, pk):
+    category = get_object_or_404(Category, pk=pk)
+    
+    if request.method == 'POST':
+        category_name = category.name
+        
+        # Видаляємо зображення якщо є
+        if category.image:
+            category.image.delete()
+        
+        category.delete()
+        messages.success(request, f'Категорію "{category_name}" успішно видалено!')
+        return redirect('categories:show_categories')
+    
+    return render(request, 'delete_category.html', {'category': category})

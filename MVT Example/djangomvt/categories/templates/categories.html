@@ -1,24 +1,127 @@
 {% extends 'layout.html' %}
 
 {% block mycontent %}
-   <h1 class="text-center">Список категорій</h1>
-   <div>
-     <a href = "add" class="btn btn-success">Додати</a>
-   </div>
-    <ul>
-         {% for category in categories %}
-              <li>
-                <h2>{{ category.name }}</h2>
-                <p>{{ category.description }}</p>
-                {% if category.image %}
-                     <img src="{{ category.image.url }}" 
-                        alt="{{ category.name }}"
-                        width="250">
-                {% endif %}
-              </li>
-         {% empty %}
-              <li>Категорії відсутні.</li>
-         {% endfor %}
-    </ul>
+<div class="container my-4">
+    <!-- ВИДАЛИТИ ЦЕЙ БЛОК -->
+    <!-- {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %} -->
 
-    {% endblock %}
+    <!-- Заголовок -->
+    <div class="mb-4">
+        <h1 class="h2 fw-bold text-center mb-3">Список категорій</h1>
+        <div class="text-center">
+            <a href="{% url 'categories:add_category' %}" class="btn btn-success">
+                <i class="bi bi-plus-circle me-2"></i>Додати
+            </a>
+        </div>
+    </div>
+
+    <!-- Список категорій -->
+    <div class="category-list">
+        {% if categories %}
+            <ul class="list-unstyled">
+                {% for category in categories %}
+                <li class="category-item mb-3 p-3 bg-white rounded shadow-sm">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            {% if category.image %}
+                                <img src="{{ category.image.url }}" 
+                                     alt="{{ category.name }}"
+                                     class="rounded"
+                                     style="width: 120px; height: 120px; object-fit: cover;">
+                            {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                     style="width: 120px; height: 120px;">
+                                    <i class="bi bi-image text-muted" style="font-size: 2.5rem;"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col">
+                            <h3 class="h5 fw-bold mb-2">• {{ category.name }}</h3>
+                            {% if category.description %}
+                                <div class="text-muted small category-desc">
+                                    {{ category.description|striptags|truncatewords:15 }}
+                                </div>
+                            {% endif %}
+                            <small class="text-muted">
+                                <i class="bi bi-calendar3 me-1"></i>{{ category.created_at|date:"d.m.Y" }}
+                            </small>
+                        </div>
+                        <div class="col-auto">
+                            <div class="btn-group-vertical btn-group-sm" role="group">
+                                <a href="{% url 'categories:edit_category' category.pk %}" 
+                                   class="btn btn-outline-secondary"
+                                   title="Редагувати">
+                                    <i class="bi bi-pencil me-1"></i>Редагувати
+                                </a>
+                                <button type="button" 
+                                        class="btn btn-outline-danger"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteModal{{ category.pk }}"
+                                        title="Видалити">
+                                    <i class="bi bi-trash me-1"></i>Видалити
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+
+                <!-- Modal для підтвердження видалення -->
+                <div class="modal fade" id="deleteModal{{ category.pk }}" tabindex="-1">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Підтвердження видалення</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Ви впевнені, що хочете видалити категорію <strong>"{{ category.name }}"</strong>?</p>
+                                <p class="text-danger small mb-0">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                    Цю дію неможливо скасувати!
+                                </p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Скасувати</button>
+                                <form method="post" action="{% url 'categories:delete_category' category.pk %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="bi bi-trash me-1"></i>Видалити
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="alert alert-info text-center">
+                <p class="mb-0">Категорії відсутні.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .category-item {
+        transition: all 0.2s ease;
+        border-left: 3px solid transparent;
+    }
+    
+    .category-item:hover {
+        border-left-color: #198754;
+        box-shadow: 0 0.25rem 0.75rem rgba(0,0,0,.1) !important;
+    }
+    
+    .category-desc {
+        line-height: 1.5;
+    }
+</style>
+{% endblock %}

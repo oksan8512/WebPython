@@ -2,7 +2,7 @@
 
 {% block mycontent %}
 
-<h1 class="text-center">Додати категорію</h1>
+<h1 class="text-center">Редагувати категорію</h1>
 
 {% if messages %}
     <div class="container mt-3">
@@ -21,17 +21,33 @@
         
         <div class="mb-3">
             <label for="name" class="form-label">Назва</label>
-            <input type="text" class="form-control" id="name" name="name" required>
+            <input type="text" class="form-control" id="name" name="name" value="{{ category.name }}" required>
         </div>
 
         <div class="mb-3">
             <label for="description" class="form-label">Опис</label>
-            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+            <textarea class="form-control" id="description" name="description" rows="3">{{ category.description }}</textarea>
         </div>
 
-        <!-- Вкладки для вибору способу додавання зображення -->
+        <!-- Поточне зображення -->
+        {% if category.image %}
         <div class="mb-3">
-            <label class="form-label">Зображення</label>
+            <label class="form-label">Поточне зображення</label>
+            <div class="mb-2">
+                <img src="{{ category.image.url }}" alt="{{ category.name }}" class="img-thumbnail" style="max-width: 300px;">
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="remove_image" name="remove_image" value="1" onclick="toggleImageUpload(this)">
+                <label class="form-check-label text-danger" for="remove_image">
+                    Видалити поточне зображення
+                </label>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Вкладки для завантаження нового зображення -->
+        <div class="mb-3" id="image-upload-section">
+            <label class="form-label">Нове зображення (необов'язково)</label>
             <ul class="nav nav-tabs" id="imageTab" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="file-tab" data-bs-toggle="tab" data-bs-target="#file" 
@@ -43,14 +59,12 @@
                 </li>
             </ul>
             <div class="tab-content border border-top-0 p-3" id="imageTabContent">
-                <!-- Спосіб 1: Завантаження файлу -->
                 <div class="tab-pane fade show active" id="file" role="tabpanel">
                     <input type="file" class="form-control" id="image_file" name="image_file" 
                            accept="image/*" onchange="previewFile(this)">
-                    <div class="form-text">Виберіть файл зображення з вашого комп'ютера (JPG, PNG, WEBP)</div>
+                    <div class="form-text">Виберіть новий файл зображення</div>
                 </div>
                 
-                <!-- Спосіб 2: URL -->
                 <div class="tab-pane fade" id="url" role="tabpanel">
                     <input type="url" class="form-control" id="image_url" name="image_url" 
                            placeholder="https://example.com/image.jpg" onchange="previewUrl(this)">
@@ -59,19 +73,21 @@
             </div>
         </div>
 
-        <!-- Попередній перегляд -->
+        <!-- Попередній перегляд нового зображення -->
         <div class="mb-3" id="image-preview-container" style="display: none;">
-            <label class="form-label">Попередній перегляд</label>
+            <label class="form-label">Попередній перегляд нового зображення</label>
             <div>
                 <img id="image-preview" src="" alt="Preview" class="img-thumbnail" 
                      style="max-width: 400px; max-height: 400px;">
             </div>
             <button type="button" class="btn btn-sm btn-danger mt-2" onclick="clearPreview()">
-                Видалити зображення
+                Скасувати
             </button>
         </div>
 
-        <button type="submit" class="btn btn-primary">Додати</button>
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save me-1"></i>Зберегти зміни
+        </button>
         <a href="{% url 'categories:show_categories' %}" class="btn btn-secondary">Скасувати</a>
     </form>
 </div>
@@ -91,47 +107,22 @@
         automatic_uploads: true,
         images_file_types: "jpg,jpeg,png,webp",
         paste_data_images: false,
-        
-        setup: (editor) => {
-            editor.on('Paste', async (e) => {
-                e.preventDefault();
-                
-                const clipboardData = e.clipboardData || e.originalEvent?.clipboardData;
-                if (!clipboardData) return;
-
-                const html = clipboardData.getData("text/html");
-                const text = clipboardData.getData("text/plain");
-
-                let contentToInsert = html || text;
-                if (!contentToInsert) return;
-
-                const temp = document.createElement("div");
-                temp.innerHTML = contentToInsert;
-
-                const imgs = Array.from(temp.querySelectorAll("img"));
-
-                for (let img of imgs) {
-                    const src = img.getAttribute("src");
-                    if (!src || src.startsWith("http://127.0.0.1")) continue;
-                    try {
-                        console.log("Upload url", src);
-                        img.setAttribute("src", "/images/default.jpg");
-                        img.setAttribute("srcset","/images/default.jpg");
-                    } catch (err) {
-                        console.error("Failed to upload image:", err);
-                    }
-                }
-                editor.insertContent(temp.innerHTML);
-            });
-        }
     });
 
-    // Попередній перегляд при завантаженні файлу
+    function toggleImageUpload(checkbox) {
+        const uploadSection = document.getElementById('image-upload-section');
+        if (checkbox.checked) {
+            uploadSection.style.display = 'none';
+            clearPreview();
+        } else {
+            uploadSection.style.display = 'block';
+        }
+    }
+
     function previewFile(input) {
         const previewContainer = document.getElementById('image-preview-container');
         const previewImg = document.getElementById('image-preview');
         
-        // Очищаємо поле URL
         document.getElementById('image_url').value = '';
         
         if (input.files && input.files[0]) {
@@ -146,13 +137,11 @@
         }
     }
 
-    // Попередній перегляд при введенні URL
     function previewUrl(input) {
         const url = input.value.trim();
         const previewContainer = document.getElementById('image-preview-container');
         const previewImg = document.getElementById('image-preview');
         
-        // Очищаємо поле файлу
         document.getElementById('image_file').value = '';
         
         if (url) {
@@ -168,7 +157,6 @@
         }
     }
 
-    // Очищення попереднього перегляду
     function clearPreview() {
         document.getElementById('image_file').value = '';
         document.getElementById('image_url').value = '';
@@ -176,7 +164,6 @@
         document.getElementById('image-preview').src = '';
     }
 
-    // Очищення іншого поля при перемиканні вкладок
     document.querySelectorAll('#imageTab button').forEach(button => {
         button.addEventListener('shown.bs.tab', function (e) {
             const target = e.target.getAttribute('data-bs-target');
